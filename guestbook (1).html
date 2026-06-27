@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Guestbook">
+<title>Sign the Guestbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Great+Vibes&family=Montserrat:wght@600;700;800&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#101730;
+    --ink-2:#1a2342;
+    --ink-soft:#222c4d;
+    --paper:#FBF6EE;
+    --paper-edge:#ece1cf;
+    --gold:#EFC25A;
+    --gold-bright:#F8D87A;
+    --rose:#D98E8E;
+    --on-ink:#eef1fb;
+    --on-ink-dim:#97a3c9;
+    --on-paper:#2a2430;
+    --on-paper-dim:#6f6577;
+    --shadow:0 22px 50px -18px rgba(0,0,0,.6);
+    --ease:cubic-bezier(.22,.68,.3,1);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;margin:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    color:var(--on-ink);
+    background:
+      radial-gradient(125% 95% at 50% -8%, #2a3766 0%, var(--ink-2) 46%, var(--ink) 100%);
+    overflow:hidden;
+    -webkit-user-select:none;user-select:none;
+    -webkit-touch-callout:none;
+  }
+  .script{font-family:"Caveat",cursive;}
+
+  /* ---------- screen router ---------- */
+  .screen{
+    position:fixed;inset:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:max(28px,env(safe-area-inset-top)) 32px max(28px,env(safe-area-inset-bottom));
+    opacity:0;visibility:hidden;transform:translateY(14px);
+    transition:opacity .45s var(--ease), transform .45s var(--ease), visibility .45s;
+  }
+  .screen.active{opacity:1;visibility:visible;transform:none;}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    appearance:none;border:0;cursor:pointer;
+    font-family:inherit;font-size:1.25rem;font-weight:600;letter-spacing:.01em;
+    min-height:68px;padding:0 38px;border-radius:999px;
+    display:inline-flex;align-items:center;justify-content:center;gap:12px;
+    transition:transform .12s var(--ease), filter .2s, box-shadow .2s;
+  }
+  .btn:active{transform:scale(.96);}
+  .btn-primary{
+    background:linear-gradient(180deg,var(--gold-bright),var(--gold));
+    color:#2c2208;box-shadow:0 14px 30px -10px rgba(201,162,75,.7);
+  }
+  .btn-ghost{background:rgba(255,255,255,.07);color:var(--on-ink);border:1px solid rgba(255,255,255,.16);}
+  .btn-paper{background:var(--ink);color:var(--on-ink);}
+  .btn-sm{min-height:54px;font-size:1.05rem;padding:0 26px;}
+  .btn-row{display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+
+  /* ---------- welcome / hero (invite theme) ---------- */
+  #welcomeScreen{padding:0;}
+  #sky{position:absolute;inset:0;overflow:hidden;pointer-events:none;
+    animation:skyIn 1.4s var(--ease) both;}
+  @keyframes skyIn{from{opacity:0}to{opacity:1}}
+  .fw{position:absolute;}
+  .fw svg{width:100%;height:100%;display:block;
+    filter:drop-shadow(0 0 6px rgba(239,194,90,.25));}
+  .spark{position:absolute;width:3px;height:3px;border-radius:50%;
+    background:var(--gold);box-shadow:0 0 6px 1px rgba(239,194,90,.6);}
+  .hero{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;
+    text-align:center;padding:0 28px;}
+  .hero-eyebrow{font-family:"Montserrat",sans-serif;text-transform:uppercase;
+    letter-spacing:.42em;font-size:.7rem;font-weight:700;color:var(--gold);opacity:.9;
+    margin-bottom:14px;padding-left:.42em;}
+  .hero-script{font-family:"Great Vibes",cursive;color:var(--gold-bright);
+    font-size:clamp(2.6rem,9vw,4.2rem);line-height:1;margin-bottom:-2px;
+    text-shadow:0 2px 18px rgba(0,0,0,.4);}
+  .hero-name{font-family:"Montserrat",sans-serif;font-weight:800;color:var(--gold);
+    letter-spacing:.18em;font-size:clamp(1.7rem,7vw,3rem);padding-left:.18em;margin-top:6px;}
+  .hero-50{font-family:"Playfair Display",serif;font-weight:900;color:var(--gold-bright);
+    font-size:clamp(5.5rem,26vw,12rem);line-height:.86;margin:2px 0 4px;
+    text-shadow:0 4px 30px rgba(0,0,0,.45);}
+  .hero-50 .th{font-size:.32em;vertical-align:super;margin-left:.04em;}
+  .hero-sub{margin:8px 0 0;max-width:26ch;font-size:1.12rem;line-height:1.5;color:var(--on-ink-dim);}
+  .welcome-cta{margin-top:34px;}
+  .welcome-foot{
+    position:absolute;left:0;right:0;bottom:max(22px,env(safe-area-inset-bottom));
+    display:flex;justify-content:center;align-items:center;gap:18px;color:var(--on-ink-dim);
+    font-size:.95rem;z-index:3;
+  }
+  .welcome-foot button{background:none;border:0;color:var(--on-ink-dim);font:inherit;cursor:pointer;padding:8px;}
+  .welcome-foot .dot{width:4px;height:4px;border-radius:50%;background:currentColor;opacity:.5;}
+  .count-pill{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);
+    padding:8px 16px;border-radius:999px;color:var(--on-ink);font-weight:600;font-size:.95rem;
+  }
+
+  /* ---------- camera ---------- */
+  .stage{
+    position:relative;width:min(92vw,560px);aspect-ratio:4/5;
+    border-radius:22px;overflow:hidden;background:#000;
+    box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.1);
+  }
+  #video,#snapImg{width:100%;height:100%;object-fit:cover;display:block;}
+  #video{transform:scaleX(-1);} /* mirror live selfie */
+  .stage-hint{position:absolute;left:0;right:0;bottom:0;padding:16px;text-align:center;
+    font-size:.95rem;color:#fff;background:linear-gradient(180deg,transparent,rgba(0,0,0,.55));}
+  .cam-error{
+    position:absolute;inset:0;display:none;flex-direction:column;gap:14px;
+    align-items:center;justify-content:center;padding:28px;text-align:center;color:var(--on-ink);
+    background:var(--ink-soft);
+  }
+  .cam-error.show{display:flex;}
+  .screen-head{text-align:center;margin-bottom:24px;}
+  .screen-head h2{font-family:"Caveat",cursive;font-size:2.6rem;margin:0;font-weight:700;}
+  .screen-head p{margin:4px 0 0;color:var(--on-ink-dim);}
+  .shutter-row{display:flex;align-items:center;gap:26px;margin-top:30px;}
+  .shutter{
+    width:84px;height:84px;border-radius:50%;border:5px solid rgba(255,255,255,.85);
+    background:var(--gold-bright);cursor:pointer;box-shadow:0 10px 26px -8px rgba(0,0,0,.6);
+    transition:transform .12s var(--ease);
+  }
+  .shutter:active{transform:scale(.9);}
+  .link-btn{background:none;border:0;color:var(--on-ink-dim);font:inherit;font-size:1.05rem;
+    cursor:pointer;text-decoration:underline;text-underline-offset:4px;padding:10px;}
+
+  /* ---------- message form ---------- */
+  .compose{width:min(94vw,640px);display:flex;flex-direction:column;align-items:center;gap:22px;}
+  .polaroid{
+    background:var(--paper);padding:12px 12px 0;border-radius:8px;box-shadow:var(--shadow);
+    width:230px;flex-shrink:0;transform:rotate(-2.5deg);
+  }
+  .polaroid .photo{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:3px;background:var(--ink-soft);display:block;}
+  .polaroid .cap{font-family:"Caveat",cursive;color:var(--on-paper-dim);text-align:center;
+    font-size:1.5rem;padding:8px 6px 14px;min-height:30px;line-height:1;word-break:break-word;}
+  .fields{width:100%;display:flex;flex-direction:column;gap:14px;}
+  .field label{display:block;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--on-ink-dim);margin:0 0 7px 4px;font-weight:600;}
+  .field input,.field textarea{
+    width:100%;font-family:inherit;font-size:1.2rem;color:var(--on-paper);
+    background:var(--paper);border:0;border-radius:14px;padding:16px 18px;
+    box-shadow:inset 0 0 0 1px var(--paper-edge);resize:none;
+  }
+  .field textarea{min-height:120px;line-height:1.45;}
+  .field input:focus,.field textarea:focus{outline:0;box-shadow:inset 0 0 0 2px var(--gold);}
+
+  /* ---------- thank you ---------- */
+  .thanks-card{
+    background:var(--paper);padding:14px 14px 0;border-radius:10px;box-shadow:var(--shadow);
+    width:240px;animation:drop .7s var(--ease) both;
+  }
+  .thanks-card .photo{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:4px;background:var(--ink-soft);display:block;}
+  .thanks-card .cap{font-family:"Caveat",cursive;font-size:1.6rem;color:var(--on-paper-dim);
+    text-align:center;padding:8px 4px 16px;}
+  @keyframes drop{0%{transform:translateY(-60px) rotate(6deg);opacity:0;}60%{opacity:1;}
+    100%{transform:translateY(0) rotate(-2deg);opacity:1;}}
+  .thanks-msg{font-family:"Caveat",cursive;font-size:3.2rem;margin:30px 0 4px;text-align:center;color:var(--gold-bright);}
+  .thanks-sub{color:var(--on-ink-dim);margin:0;}
+
+  /* ---------- gallery ---------- */
+  #galleryScreen{justify-content:flex-start;padding-top:max(24px,env(safe-area-inset-top));}
+  .gal-bar{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
+  .gal-bar h2{font-family:"Caveat",cursive;font-size:2.4rem;margin:0;font-weight:700;}
+  .grid{
+    width:100%;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+    gap:22px;padding:6px 4px 40px;align-content:start;
+  }
+  .g-card{background:var(--paper);padding:11px 11px 0;border-radius:8px;box-shadow:var(--shadow);
+    transform:rotate(var(--rot,-1deg));transition:transform .2s var(--ease);}
+  .g-card:active{transform:rotate(0) scale(1.02);}
+  .g-card .photo{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:3px;background:var(--ink-soft);display:block;}
+  .g-card .nm{font-family:"Caveat",cursive;font-size:1.5rem;color:var(--on-paper);text-align:center;padding:6px 4px 2px;font-weight:700;}
+  .g-card .ms{font-size:.92rem;color:var(--on-paper-dim);text-align:center;padding:0 8px 14px;line-height:1.4;word-break:break-word;}
+  .empty{margin:auto;text-align:center;color:var(--on-ink-dim);}
+  .empty .script{font-size:2.2rem;color:var(--on-ink);display:block;margin-bottom:6px;}
+
+  /* ---------- export picker ---------- */
+  #pickerScreen{justify-content:flex-start;padding-top:max(24px,env(safe-area-inset-top));}
+  .pick-grid{padding-bottom:104px;}
+  .g-card.pick{position:relative;cursor:pointer;opacity:.5;transform:rotate(var(--rot,-1deg));
+    transition:opacity .15s,box-shadow .15s,transform .15s;}
+  .g-card.pick .tick{position:absolute;top:9px;right:9px;width:30px;height:30px;border-radius:50%;
+    background:rgba(20,24,45,.45);color:transparent;display:flex;align-items:center;justify-content:center;
+    font-size:1rem;font-weight:700;z-index:2;border:2px solid rgba(255,255,255,.6);}
+  .g-card.pick .nm{padding-bottom:12px;}
+  .g-card.pick.sel{opacity:1;box-shadow:0 0 0 4px var(--gold), var(--shadow);}
+  .g-card.pick.sel .tick{background:var(--gold);color:#2c2208;border-color:var(--gold);}
+  .pick-foot{position:absolute;left:0;right:0;bottom:0;
+    padding:14px 20px max(20px,env(safe-area-inset-bottom));display:flex;justify-content:center;
+    background:linear-gradient(transparent,var(--ink) 45%);}
+  .pick-foot .btn{min-width:min(90vw,360px);}
+
+  /* ---------- host sheet ---------- */
+  .sheet-wrap{position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;
+    background:rgba(0,0,0,.5);backdrop-filter:blur(3px);}
+  .sheet-wrap.show{display:flex;}
+  .sheet{background:#1a2342;width:100%;max-width:520px;border-radius:26px 26px 0 0;
+    padding:26px 24px max(30px,env(safe-area-inset-bottom));border:1px solid rgba(255,255,255,.1);border-bottom:0;}
+  .sheet h3{margin:0 0 4px;font-size:1.3rem;}
+  .sheet p{margin:0 0 18px;color:var(--on-ink-dim);font-size:.95rem;}
+  .sheet .btn{width:100%;margin-bottom:12px;}
+  .danger{color:#ff9b9b !important;}
+  .toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+    background:#fff;color:#1a1a1a;padding:14px 22px;border-radius:999px;font-weight:600;
+    box-shadow:var(--shadow);opacity:0;transition:.3s var(--ease);z-index:80;pointer-events:none;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .hidden{display:none !important;}
+</style>
+</head>
+<body>
+
+<!-- WELCOME -->
+<section class="screen active" id="welcomeScreen">
+  <div id="sky"></div>
+  <div class="hero">
+    <div class="hero-eyebrow">✦ &nbsp;The Guestbook&nbsp; ✦</div>
+    <div class="hero-script">Let's celebrate</div>
+    <div class="hero-name">ANAND'S</div>
+    <div class="hero-50">50<span class="th">th</span></div>
+    <p class="hero-sub">Snap a photo and leave Anand a birthday message.</p>
+    <button class="btn btn-primary welcome-cta" onclick="startEntry()">📷&nbsp; Add your message</button>
+  </div>
+  <div class="welcome-foot">
+    <span class="count-pill">📖 <span id="countText">0 signed</span></span>
+    <span class="dot"></span>
+    <button onclick="showGallery()">View the book</button>
+    <span class="dot"></span>
+    <button onclick="openSheet()" aria-label="Host menu">Host</button>
+  </div>
+</section>
+
+<!-- CAMERA -->
+<section class="screen" id="cameraScreen">
+  <div class="screen-head"><h2>Smile!</h2><p>Tap the button when you're ready</p></div>
+  <div class="stage">
+    <video id="video" autoplay playsinline muted></video>
+    <div class="stage-hint" id="stageHint">Front camera</div>
+    <div class="cam-error" id="camError">
+      <div style="font-size:2rem">📸</div>
+      <div>We can't reach the camera here.<br>You can still pick a photo instead.</div>
+      <button class="btn btn-primary btn-sm" onclick="filePicker.click()">Choose a photo</button>
+    </div>
+  </div>
+  <div class="shutter-row">
+    <button class="link-btn" onclick="goWelcome()">Cancel</button>
+    <button class="shutter" id="shutterBtn" onclick="capture()" aria-label="Take photo"></button>
+    <button class="link-btn" onclick="skipPhoto()">Skip photo</button>
+  </div>
+  <input type="file" id="filePicker" accept="image/*" capture="user" class="hidden">
+</section>
+
+<!-- COMPOSE -->
+<section class="screen" id="composeScreen">
+  <div class="screen-head"><h2>Say hello</h2><p>Tell us who you are and leave a note</p></div>
+  <div class="compose">
+    <div class="polaroid">
+      <img id="composePhoto" class="photo" alt="">
+      <div class="cap script">♥</div>
+    </div>
+    <div class="fields">
+      <div class="field">
+        <label for="nameInput">Your name</label>
+        <input id="nameInput" type="text" placeholder="e.g. Pluto Raman" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="msgInput">Your message</label>
+        <textarea id="msgInput" placeholder="Happy birthday, Anand!"></textarea>
+      </div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-ghost btn-sm" onclick="retake()">↺ Retake</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Add to the guestbook</button>
+    </div>
+  </div>
+</section>
+
+<!-- THANK YOU -->
+<section class="screen" id="thanksScreen">
+  <div class="thanks-card" id="thanksCard">
+    <img id="thanksPhoto" class="photo" alt="">
+    <div class="cap script" id="thanksName">♥</div>
+  </div>
+  <p class="thanks-msg script" id="thanksMsg">Thank you!</p>
+  <p class="thanks-sub">You're in the book. Returning to the start…</p>
+</section>
+
+<!-- GALLERY -->
+<section class="screen" id="galleryScreen">
+  <div class="gal-bar">
+    <h2>The Guestbook</h2>
+    <button class="btn btn-ghost btn-sm" onclick="goWelcome()">Done</button>
+  </div>
+  <div class="grid" id="grid"></div>
+</section>
+
+<!-- EXPORT PICKER -->
+<section class="screen" id="pickerScreen">
+  <div class="gal-bar">
+    <h2>Choose entries</h2>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-ghost btn-sm" id="pickAllBtn" onclick="pickAll()">Clear all</button>
+      <button class="btn btn-ghost btn-sm" onclick="goWelcome()">Cancel</button>
+    </div>
+  </div>
+  <div class="grid pick-grid" id="pickGrid"></div>
+  <div class="pick-foot">
+    <button class="btn btn-primary" onclick="exportPicked()">Create PDF album (<span id="pickCount">0</span>)</button>
+  </div>
+</section>
+
+<!-- HOST SHEET -->
+<div class="sheet-wrap" id="sheetWrap" onclick="if(event.target===this)closeSheet()">
+  <div class="sheet">
+    <h3>Host menu</h3>
+    <p id="sheetCount">No entries yet.</p>
+    <button class="btn btn-primary btn-sm" onclick="openExportPicker()">⬇ Download album (PDF)</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportJSON()">Backup data (.json)</button>
+    <button class="btn btn-ghost btn-sm" onclick="importInput.click()">Restore from backup</button>
+    <button class="btn btn-ghost btn-sm danger" onclick="clearAll()">Erase all entries</button>
+    <button class="btn btn-ghost btn-sm" onclick="closeSheet()" style="opacity:.7">Close</button>
+    <input type="file" id="importInput" accept="application/json,.json" class="hidden">
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<canvas id="canvas" class="hidden"></canvas>
+
+<script>
+"use strict";
+
+/* ============ tiny IndexedDB layer (survives big events) ============ */
+const DB_NAME="guestbook_db", STORE="entries";
+let _db=null;
+function db(){
+  if(_db) return Promise.resolve(_db);
+  return new Promise((res,rej)=>{
+    const r=indexedDB.open(DB_NAME,1);
+    r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains(STORE))
+      d.createObjectStore(STORE,{keyPath:"id"});};
+    r.onsuccess=()=>{_db=r.result;res(_db);};
+    r.onerror=()=>rej(r.error);
+  });
+}
+function tx(mode){return db().then(d=>d.transaction(STORE,mode).objectStore(STORE));}
+function putEntry(e){return tx("readwrite").then(s=>new Promise((res,rej)=>{const q=s.put(e);q.onsuccess=res;q.onerror=()=>rej(q.error);}));}
+function allEntries(){return tx("readonly").then(s=>new Promise((res,rej)=>{const q=s.getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error);}));}
+function clearStore(){return tx("readwrite").then(s=>new Promise((res,rej)=>{const q=s.clear();q.onsuccess=res;q.onerror=()=>rej(q.error);}));}
+
+/* ============ state + elements ============ */
+let stream=null;
+let pendingPhoto=null;          // dataURL of captured/picked photo (or null if skipped)
+const video=document.getElementById("video");
+const canvas=document.getElementById("canvas");
+const filePicker=document.getElementById("filePicker");
+const importInput=document.getElementById("importInput");
+const PLACEHOLDER="data:image/svg+xml;utf8,"+encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#222c4d"/><text x="100" y="118" font-size="90" text-anchor="middle" fill="#EFC25A">♥</text></svg>');
+
+/* ============ screen router ============ */
+function show(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));
+}
+function goWelcome(){stopCamera();show("welcomeScreen");refreshCount();}
+
+/* ============ welcome / count ============ */
+async function refreshCount(){
+  const n=(await allEntries()).length;
+  document.getElementById("countText").textContent = n===1 ? "1 signed" : n+" signed";
+}
+
+/* ============ entry flow ============ */
+async function startEntry(){
+  pendingPhoto=null;
+  show("cameraScreen");
+  await startCamera();
+}
+async function startCamera(){
+  const err=document.getElementById("camError");
+  err.classList.remove("show");
+  document.getElementById("shutterBtn").style.visibility="visible";
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:"user",width:{ideal:1280},height:{ideal:1280}},audio:false});
+    video.srcObject=stream;
+  }catch(e){
+    // no camera / denied → fall back to native picker
+    err.classList.add("show");
+    document.getElementById("shutterBtn").style.visibility="hidden";
+  }
+}
+function stopCamera(){
+  if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+  video.srcObject=null;
+}
+
+/* draw the current video frame to a square, downscaled JPEG */
+function capture(){
+  if(!stream) return;
+  const size=900;
+  const vw=video.videoWidth, vh=video.videoHeight;
+  if(!vw||!vh) return;
+  const side=Math.min(vw,vh);
+  canvas.width=size;canvas.height=size;
+  const ctx=canvas.getContext("2d");
+  // mirror to match the selfie preview
+  ctx.translate(size,0);ctx.scale(-1,1);
+  ctx.drawImage(video,(vw-side)/2,(vh-side)/2,side,side,0,0,size,size);
+  pendingPhoto=canvas.toDataURL("image/jpeg",0.82);
+  toCompose();
+}
+
+/* resize an arbitrary uploaded image into a square JPEG */
+function resizeFile(file){
+  return new Promise((res)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const size=900,side=Math.min(img.width,img.height);
+      canvas.width=size;canvas.height=size;
+      const ctx=canvas.getContext("2d");
+      ctx.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,size,size);
+      res(canvas.toDataURL("image/jpeg",0.82));
+    };
+    img.src=URL.createObjectURL(file);
+  });
+}
+filePicker.addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  pendingPhoto=await resizeFile(f);
+  e.target.value="";
+  toCompose();
+});
+
+function skipPhoto(){pendingPhoto=null;toCompose();}
+function retake(){startEntry();}
+
+function toCompose(){
+  stopCamera();
+  document.getElementById("composePhoto").src = pendingPhoto || PLACEHOLDER;
+  document.getElementById("nameInput").value="";
+  document.getElementById("msgInput").value="";
+  show("composeScreen");
+  setTimeout(()=>document.getElementById("nameInput").focus(),350);
+}
+
+async function saveEntry(){
+  const name=document.getElementById("nameInput").value.trim();
+  const msg=document.getElementById("msgInput").value.trim();
+  if(!name && !msg){toast("Add a name or a note first 🙂");return;}
+  const entry={id:Date.now()+"-"+Math.random().toString(36).slice(2,7),
+    name:name||"A guest", message:msg, photo:pendingPhoto, ts:Date.now()};
+  try{ await putEntry(entry); }
+  catch(err){ toast("Couldn't save — storage may be full"); return; }
+  // thank-you screen
+  document.getElementById("thanksPhoto").src = pendingPhoto || PLACEHOLDER;
+  document.getElementById("thanksName").textContent = entry.name;
+  document.getElementById("thanksMsg").textContent = "Thank you, "+entry.name.split(" ")[0]+"!";
+  const card=document.getElementById("thanksCard");
+  card.style.animation="none";void card.offsetWidth;card.style.animation="";
+  show("thanksScreen");
+  refreshCount();
+  clearTimeout(window._thx);
+  window._thx=setTimeout(goWelcome,4200);
+}
+
+/* ============ gallery ============ */
+async function showGallery(){
+  stopCamera();
+  const grid=document.getElementById("grid");
+  const items=(await allEntries()).sort((a,b)=>b.ts-a.ts);
+  if(!items.length){
+    grid.innerHTML='<div class="empty"><span class="script">The book is empty</span>Be the first to sign it.</div>';
+  }else{
+    grid.innerHTML=items.map((e,i)=>{
+      const rot=((i%5)-2)*1.4;
+      return `<div class="g-card" style="--rot:${rot}deg">
+        <img class="photo" src="${e.photo||PLACEHOLDER}" alt="">
+        <div class="nm">${esc(e.name)}</div>
+        ${e.message?`<div class="ms">${esc(e.message)}</div>`:`<div class="ms"></div>`}
+      </div>`;
+    }).join("");
+  }
+  show("galleryScreen");
+}
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+/* ============ host sheet ============ */
+async function openSheet(){
+  const n=(await allEntries()).length;
+  document.getElementById("sheetCount").textContent =
+    n ? `${n} ${n===1?"message":"messages"} saved on this iPad.` : "No entries yet.";
+  document.getElementById("sheetWrap").classList.add("show");
+}
+function closeSheet(){document.getElementById("sheetWrap").classList.remove("show");}
+
+function download(filename,blob){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+async function exportJSON(){
+  const items=await allEntries();
+  download("guestbook-backup.json",new Blob([JSON.stringify(items)],{type:"application/json"}));
+  toast("Backup downloaded");
+}
+/* load a script on demand (used for the PDF library) */
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement("script");s.src=src;s.onload=res;s.onerror=rej;
+    document.head.appendChild(s);
+  });
+}
+async function ensureJsPDF(){
+  if(window.jspdf&&window.jspdf.jsPDF) return true;
+  try{ await loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+    return !!(window.jspdf&&window.jspdf.jsPDF); }
+  catch(e){ return false; }
+}
+
+/* ---- export picker: choose which entries go in the album ---- */
+let pickerItems=[], picked=new Set();
+async function openExportPicker(){
+  closeSheet();
+  pickerItems=(await allEntries()).sort((a,b)=>a.ts-b.ts);
+  if(!pickerItems.length){ toast("No entries to export yet"); return; }
+  picked=new Set(pickerItems.map(e=>e.id));   // all selected by default
+  renderPicker();
+  show("pickerScreen");
+}
+function renderPicker(){
+  document.getElementById("pickGrid").innerHTML = pickerItems.map((e,i)=>{
+    const sel=picked.has(e.id), rot=((i%5)-2)*1.2;
+    return `<div class="g-card pick${sel?" sel":""}" style="--rot:${rot}deg" data-id="${e.id}" onclick="togglePick('${e.id}')">
+      <div class="tick">✓</div>
+      <img class="photo" src="${e.photo||PLACEHOLDER}" alt="">
+      <div class="nm">${esc(e.name)}</div>
+    </div>`;
+  }).join("");
+  updatePickBar();
+}
+function togglePick(id){
+  picked.has(id)?picked.delete(id):picked.add(id);
+  const el=document.querySelector('.pick[data-id="'+id+'"]');
+  if(el) el.classList.toggle("sel",picked.has(id));
+  updatePickBar();
+}
+function pickAll(){
+  picked = picked.size<pickerItems.length ? new Set(pickerItems.map(e=>e.id)) : new Set();
+  renderPicker();
+}
+function updatePickBar(){
+  document.getElementById("pickCount").textContent=picked.size;
+  document.getElementById("pickAllBtn").textContent = picked.size<pickerItems.length ? "Select all" : "Clear all";
+}
+async function exportPicked(){
+  const items=pickerItems.filter(e=>picked.has(e.id));
+  if(!items.length){ toast("Pick at least one entry"); return; }
+  await buildPDF(items);
+}
+
+/* ---- landscape, one-entry-per-page flip-through album ---- */
+async function buildPDF(items){
+  items=items.slice().sort((a,b)=>a.ts-b.ts);
+  toast("Building your album…");
+  const ok=await ensureJsPDF();
+  if(!ok){
+    toast("Couldn't load PDF tools offline — saved a printable web version");
+    return exportKeepsake(items);      // fallback (then Share → Print → Save as PDF)
+  }
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+  const W=297,H=210;
+  const dateStr=new Date().toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"});
+
+  drawCover(doc,items.length,dateStr,W,H);
+  items.forEach((e,i)=>{ doc.addPage(); drawEntryPage(doc,e,i+1,items.length,W,H); });
+  doc.save("anands-50th-guestbook.pdf");
+  toast("Album downloaded 🎉");
+}
+
+function paper(doc,W,H){
+  doc.setFillColor(251,246,238); doc.rect(0,0,W,H,"F");            // cream page
+  doc.setDrawColor(201,162,75); doc.setLineWidth(0.6);
+  doc.rect(8,8,W-16,H-16);                                          // gold frame
+  doc.setLineWidth(0.2); doc.rect(10,10,W-20,H-20);                 // inner hairline
+}
+function drawCover(doc,count,dateStr,W,H){
+  paper(doc,W,H);
+  doc.setTextColor(42,36,48);
+  doc.setFont("times","italic"); doc.setFontSize(20);
+  doc.text("Let's celebrate",W/2,66,{align:"center"});
+  doc.setFont("times","bold"); doc.setFontSize(58);
+  doc.text("ANAND'S 50th",W/2,92,{align:"center"});
+  doc.setFont("times","italic"); doc.setFontSize(24);
+  doc.text("Guestbook",W/2,112,{align:"center"});
+  doc.setDrawColor(201,162,75); doc.setLineWidth(0.5);
+  doc.line(W/2-40,122,W/2+40,122);
+  doc.setFont("times","normal"); doc.setFontSize(15); doc.setTextColor(111,101,119);
+  doc.text(`${count} ${count===1?"message":"messages"} with love`,W/2,136,{align:"center"});
+  doc.text(dateStr,W/2,146,{align:"center"});
+}
+function drawEntryPage(doc,e,page,total,W,H){
+  paper(doc,W,H);
+  // --- polaroid photo on the left ---
+  const cardX=22,cardY=22,cardW=150,cardH=166;
+  doc.setFillColor(224,217,206); doc.roundedRect(cardX+1.6,cardY+2,cardW,cardH,2,2,"F"); // soft shadow
+  doc.setFillColor(255,255,255); doc.roundedRect(cardX,cardY,cardW,cardH,2,2,"F");        // white card
+  const ph=cardW-12; // square photo inset
+  if(e.photo){
+    try{ doc.addImage(e.photo,"JPEG",cardX+6,cardY+6,ph,ph); }catch(_){}
+  }else{
+    doc.setFillColor(244,240,250); doc.rect(cardX+6,cardY+6,ph,ph,"F");
+    doc.setTextColor(201,162,75); doc.setFont("times","bold"); doc.setFontSize(80);
+    doc.text((e.name||"♥").trim().charAt(0).toUpperCase()||"♥",cardX+6+ph/2,cardY+6+ph/2+14,{align:"center"});
+  }
+  // --- name + message on the right ---
+  const rx=190, rw=W-rx-20;
+  let y=58;
+  doc.setTextColor(42,36,48); doc.setFont("times","bolditalic"); doc.setFontSize(30);
+  doc.splitTextToSize(e.name||"A guest",rw).slice(0,2).forEach(line=>{doc.text(line,rx,y);y+=13;});
+  doc.setDrawColor(201,162,75); doc.setLineWidth(0.5); doc.line(rx,y-2,rx+44,y-2); y+=12;
+  if(e.message){
+    doc.setFont("times","normal"); doc.setTextColor(60,54,68);
+    const bottom=H-26, avail=bottom-y;
+    // shrink the message to fit the page when it's long (no character limit anymore)
+    let fs=15, lh=8, lines=[];
+    for(;fs>=8;fs--){
+      lh=fs*0.52;
+      doc.setFontSize(fs);
+      lines=doc.splitTextToSize(e.message,rw);
+      if(lines.length*lh<=avail) break;
+    }
+    doc.setFontSize(fs);
+    lines.forEach(line=>{ if(y<=bottom){ doc.text(line,rx,y); y+=lh; } });
+  }
+  // --- footer ---
+  doc.setFont("times","italic"); doc.setFontSize(10); doc.setTextColor(150,140,158);
+  doc.text("Our Guestbook",rx,H-18);
+  doc.text(`${page} / ${total}`,W-20,H-18,{align:"right"});
+}
+
+/* offline fallback: printable web page (Share → Print → Save as PDF) */
+async function exportKeepsake(preItems){
+  const items=preItems||(await allEntries()).sort((a,b)=>a.ts-b.ts);
+  const pages=items.map((e,i)=>`<section class="pg">
+      <div class="pl"><div class="ph">${e.photo?`<img src="${e.photo}">`:`<div class="mono">${esc((e.name||"♥").charAt(0).toUpperCase())}</div>`}</div></div>
+      <div class="pr"><h2>${esc(e.name)}</h2><hr>${e.message?`<p>${esc(e.message)}</p>`:""}
+        <div class="ft"><span>Our Guestbook</span><span>${i+1} / ${items.length}</span></div></div>
+    </section>`).join("");
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Our Guestbook</title>
+<style>@page{size:A4 landscape;margin:0}
+*{box-sizing:border-box}body{margin:0;font-family:Georgia,'Times New Roman',serif;background:#3a3346}
+.pg{position:relative;width:297mm;height:210mm;background:#FBF6EE;display:flex;align-items:center;gap:14mm;
+  padding:22mm;page-break-after:always;outline:1.5pt solid #C9A24B;outline-offset:-8mm}
+.pl{flex:0 0 150mm}.ph{background:#fff;padding:6mm;border-radius:2mm;box-shadow:2mm 2mm 0 #e0d9ce;aspect-ratio:1;display:flex}
+.ph img{width:100%;height:100%;object-fit:cover;border-radius:1mm}
+.mono{flex:1;display:flex;align-items:center;justify-content:center;background:#f4f0fa;color:#C9A24B;font-size:80mm;border-radius:1mm}
+.pr{flex:1}.pr h2{font-size:30pt;font-style:italic;color:#2a2430;margin:0}
+hr{border:0;border-top:.6pt solid #C9A24B;width:44mm;margin:5mm 0}
+.pr p{font-size:15pt;line-height:1.5;color:#3c3644;margin:0}
+.ft{position:absolute;left:22mm;right:22mm;bottom:16mm;display:flex;justify-content:space-between;
+  font-style:italic;font-size:10pt;color:#968a9e}
+@media screen{body{padding:20px}.pg{margin:0 auto 20px;box-shadow:0 20px 50px -20px #000}}</style></head>
+<body>${pages}</body></html>`;
+  download("our-guestbook-album.html",new Blob([html],{type:"text/html"}));
+  toast("Saved — open it, then Share → Print → Save as PDF");
+}
+importInput.addEventListener("change",async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{
+    const data=JSON.parse(await f.text());
+    if(!Array.isArray(data)) throw 0;
+    for(const it of data){ if(it && it.id) await putEntry(it); }
+    toast("Restored "+data.length+" entries");
+    refreshCount();
+  }catch(_){ toast("That file couldn't be read"); }
+  e.target.value="";
+});
+async function clearAll(){
+  if(!confirm("Erase ALL guestbook entries on this iPad? This cannot be undone.\n\nDownload a backup first if you want to keep them.")) return;
+  await clearStore();
+  closeSheet();refreshCount();
+  toast("All entries erased");
+}
+
+/* ============ misc ============ */
+let _toastT;
+function toast(msg){
+  const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(_toastT);_toastT=setTimeout(()=>t.classList.remove("show"),2200);
+}
+// keep the captured-photo caption heart only when there IS a photo
+document.getElementById("msgInput").addEventListener("input",e=>{
+  document.querySelector("#composeScreen .polaroid .cap").textContent = e.target.value.trim()? "✎" : "♥";
+});
+
+/* ============ fireworks backdrop (invite motif) ============ */
+function makeSky(){
+  const sky=document.getElementById("sky");
+  const fws=[
+    {top:"4%",left:"6%",size:160,rays:16,op:.55},
+    {top:"1%",left:"68%",size:130,rays:18,op:.45},
+    {top:"26%",left:"83%",size:90, rays:12,op:.32},
+    {top:"19%",left:"-5%",size:104,rays:14,op:.4},
+    {top:"48%",left:"86%",size:74, rays:12,op:.24},
+    {top:"55%",left:"-7%",size:88, rays:12,op:.26},
+    {top:"38%",left:"44%",size:54, rays:10,op:.2},
+  ];
+  const ray=(n)=>{let s="",cx=50,cy=50,r1=12,r2=46;
+    for(let i=0;i<n;i++){const a=i/n*Math.PI*2;
+      s+=`<line x1="${(cx+Math.cos(a)*r1).toFixed(1)}" y1="${(cy+Math.sin(a)*r1).toFixed(1)}" x2="${(cx+Math.cos(a)*r2).toFixed(1)}" y2="${(cy+Math.sin(a)*r2).toFixed(1)}"/>`;}
+    return s;};
+  let html=fws.map(f=>`<div class="fw" style="top:${f.top};left:${f.left};width:${f.size}px;height:${f.size}px;opacity:${f.op}">
+    <svg viewBox="0 0 100 100"><g stroke="var(--gold)" stroke-width="1.5" stroke-linecap="round">${ray(f.rays)}</g></svg></div>`).join("");
+  const dots=[[18,"6%","20%"],[12,"30%","13%"],[10,"58%","9%"],[14,"76%","22%"],[10,"12%","38%"],[12,"66%","40%"],[10,"40%","30%"]];
+  dots.forEach(d=>{ html+=`<div class="spark" style="left:${d[1]};top:${d[2]};opacity:.55"></div>`; });
+  sky.innerHTML=html;
+}
+makeSky();
+
+refreshCount();
+</script>
+</body>
+</html>
