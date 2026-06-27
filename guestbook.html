@@ -728,6 +728,74 @@ function makeSky(){
 makeSky();
 
 refreshCount();
+  /* ===== PDF restyle: invite-themed cover + navy/gold entry pages ===== */
+function setOp(doc,o){
+  try{
+    var G = doc.GState || (window.jspdf && window.jspdf.GState);
+    if(G) doc.setGState(new G({opacity:o}));
+  }catch(_){}
+}
+function pdfFirework(doc,cx,cy,r1,r2,rays){
+  for(var i=0;i<rays;i++){
+    var a=i/rays*Math.PI*2;
+    doc.line(cx+Math.cos(a)*r1, cy+Math.sin(a)*r1, cx+Math.cos(a)*r2, cy+Math.sin(a)*r2);
+  }
+}
+function drawCover(doc,count,dateStr,W,H){
+  doc.setFillColor(16,23,48); doc.rect(0,0,W,H,"F");
+  setOp(doc,.7); doc.setDrawColor(239,194,90);
+  doc.setLineWidth(0.6); doc.rect(8,8,W-16,H-16);
+  doc.setLineWidth(0.2); doc.rect(10.5,10.5,W-21,H-21); setOp(doc,1);
+  doc.setDrawColor(239,194,90); doc.setLineWidth(0.7);
+  setOp(doc,.55); pdfFirework(doc,30,34,5,24,16);
+  setOp(doc,.5);  pdfFirework(doc,W-32,30,4,20,16);
+  setOp(doc,.32); pdfFirework(doc,W-40,H-34,4,18,14);
+  setOp(doc,.28); pdfFirework(doc,38,H-40,4,16,14); setOp(doc,1);
+  var cx=W/2;
+  doc.setFont("times","bold"); doc.setFontSize(30); doc.setTextColor(239,194,90);
+  doc.text("ANAND'S",cx,78,{align:"center",charSpace:2.5});
+  doc.setTextColor(248,216,122); doc.setFont("times","bold");
+  doc.setFontSize(70); var wF=doc.getTextWidth("50");
+  doc.setFontSize(27); var wT=doc.getTextWidth("th");
+  var tot=wF+wT+2, sx=cx-tot/2;
+  doc.setFontSize(70); doc.text("50",sx,132);
+  doc.setFontSize(27); doc.text("th",sx+wF+2,110);
+  doc.setFont("times","italic"); doc.setFontSize(24); doc.setTextColor(239,194,90);
+  doc.text("Guestbook",cx,154,{align:"center"});
+  doc.setDrawColor(239,194,90); doc.setLineWidth(0.5); doc.line(cx-26,164,cx+26,164);
+  doc.setFont("times","italic"); doc.setFontSize(13); doc.setTextColor(151,163,201);
+  doc.text("18 July 2026",cx,176,{align:"center"});
+}
+function drawEntryPage(doc,e,page,total,W,H){
+  doc.setFillColor(16,23,48); doc.rect(0,0,W,H,"F");
+  setOp(doc,.45); doc.setDrawColor(239,194,90); doc.setLineWidth(0.4);
+  doc.rect(7,7,W-14,H-14); setOp(doc,1);
+  setOp(doc,.2); doc.setDrawColor(239,194,90); doc.setLineWidth(0.6);
+  pdfFirework(doc,W-28,28,4,18,16); setOp(doc,1);
+  var cardX=22,cardY=24,cardW=150,cardH=162,ph=cardW-12;
+  doc.setFillColor(8,12,28); doc.roundedRect(cardX+2,cardY+2.5,cardW,cardH,2,2,"F");
+  doc.setFillColor(255,255,255); doc.roundedRect(cardX,cardY,cardW,cardH,2,2,"F");
+  if(e.photo){ try{ doc.addImage(e.photo,"JPEG",cardX+6,cardY+6,ph,ph);}catch(_){ } }
+  else{
+    doc.setFillColor(232,236,247); doc.rect(cardX+6,cardY+6,ph,ph,"F");
+    doc.setTextColor(201,162,75); doc.setFont("times","bold"); doc.setFontSize(80);
+    doc.text((e.name||"♥").trim().charAt(0).toUpperCase()||"♥",cardX+6+ph/2,cardY+6+ph/2+14,{align:"center"});
+  }
+  var rx=190, rw=W-rx-18, y=60;
+  doc.setFont("times","bolditalic"); doc.setFontSize(30); doc.setTextColor(248,216,122);
+  doc.splitTextToSize(e.name||"A guest",rw).slice(0,2).forEach(function(l){doc.text(l,rx,y);y+=13;});
+  doc.setDrawColor(239,194,90); doc.setLineWidth(0.6); doc.line(rx,y-2,rx+46,y-2); y+=12;
+  if(e.message){
+    doc.setFont("times","normal"); doc.setTextColor(231,228,216);
+    var bottom=H-22, avail=bottom-y, fs=15, lh=8, lines=[];
+    for(;fs>=8;fs--){ lh=fs*0.52; doc.setFontSize(fs);
+      lines=doc.splitTextToSize(e.message,rw); if(lines.length*lh<=avail) break; }
+    doc.setFontSize(fs);
+    lines.forEach(function(l){ if(y<=bottom){doc.text(l,rx,y); y+=lh;} });
+  }
+  doc.setFont("times","italic"); doc.setFontSize(11); doc.setTextColor(239,194,90);
+  doc.text(String(page),W-16,H-14,{align:"right"});
+}
 </script>
 </body>
 </html>
